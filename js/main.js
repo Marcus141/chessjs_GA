@@ -103,8 +103,14 @@ document.addEventListener("click", (e) => {
     if (from_bool == true) {
         let x = Math.floor((e.clientX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
         let y = Math.floor((e.clientY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
+        let invalid_cordinate = (x < 0) || (x > 7) || (y < 0) || (y > 7);
+        if (invalid_cordinate) {
+            return;
+        }
         let to = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
+        console.log(x,y)
         move(from, to, expand_fen(fen));
+        console.log(from,to)
         from_bool = false;
         from = "";
         document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(255, 20, 20)";
@@ -113,9 +119,14 @@ document.addEventListener("click", (e) => {
 
     let x = Math.floor((e.clientX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
     let y = Math.floor((e.clientY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
+    let invalid_cordinate = (x < 0) || (x > 7) || (y < 0) || (y > 7);
+    if (invalid_cordinate) {
+        return;
+    }
     from = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
     from_bool = true;
     document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(0, 255, 40)";
+    console.log(from)
 });
 
 document.addEventListener("keydown", (e) => {
