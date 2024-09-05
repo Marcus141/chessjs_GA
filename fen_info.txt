@@ -1,0 +1,18 @@
+field 1: board info 
+    example: "8/pppppppp/8/8/8/8/PPPPPPPP/8"
+
+field 2: turn
+    example "8/pppppppp/8/8/8/8/PPPPPPPP/8 w"
+                                           |
+    "w" indicates white turn
+    "b" indicates black turn
+
+field 3: Cassling rights
+    example: "8/pppppppp/8/8/8/8/PPPPPPPP/8 w KQkq"
+                                                |
+    K indicates black can castle king side
+    Q indicates black can castle queen side
+    k indicates white can castle king side
+    q indicates white can castle king side
+
+field 4: en Pessent
