@@ -21,30 +21,42 @@ const draw_board = (ctx) => {
 
 }
 
+
 draw_board(ctx);
 
-let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
 
 const expand_fen = (fen) => {
     let expanded_fen = "";
-    for (let i = 0; i < fen.length; i++) {
-        let c = fen.charAt(i);
-        if (c >= "1" && c <= "8") {
-            for (let j = 0; j < parseInt(c); j++) {
-                expanded_fen += "1";
+    let fen_arr = fen.split(" ")[0].split("/");
+    for (let i = 0; i < fen_arr.length; i++) {
+        let row = fen_arr[i];
+        let expanded_row = "";
+        for (let j = 0; j < row.length; j++) {
+            let c = row.charAt(j);
+            if (c >= "1" && c <= "8") {
+                for (let k = 0; k < parseInt(c); k++) {
+                    expanded_row += "1";
+                }
+            } else {
+                expanded_row += c;
             }
-        } else {
-            expanded_fen += c;
+        }
+        expanded_fen += expanded_row;
+        if (i < fen_arr.length - 1) {
+            expanded_fen += "/";
         }
     }
-    return expanded_fen;
+    return expanded_fen + " " + fen.split(" ")[1] + " " + fen.split(" ")[2] + " " + fen.split(" ")[3] + " " + parseInt(fen.split(" ")[4]) + " " + parseInt(fen.split(" ")[5]);
 }
+console.log(expand_fen(fen));
 
 const condence_fen = (expanded_fen) => {
+    expanded_fen = expanded_fen.split(" ");
     let fen = "";
     let count = 0;
-    for (let i = 0; i < expanded_fen.length; i++) {
-        let c = expanded_fen.charAt(i);
+    for (let i = 0; i < expanded_fen[0].length; i++) {
+        let c = expanded_fen[0].charAt(i);
         if (c == "1") {
             count++;
         } else {
@@ -58,15 +70,15 @@ const condence_fen = (expanded_fen) => {
     if (count > 0) {
         fen += count;
     }
-    return fen;
+    return fen + " " + expanded_fen[1] + " " + expanded_fen[2] + " " + expanded_fen[3] + " " + parseInt(expanded_fen[4]) + " " + parseInt(expanded_fen[5]);
 }
 
-console.log(expand_fen(fen));
+console.log(condence_fen(expand_fen(fen)));
 
 const draw_pieces = (ctx, fen) => {
     let x = 0;
     let y = 0;
-    for (let i = 0; i < fen.length; i++) {
+    for (let i = 0; i < fen.split(" ")[0].length; i++) {
         let c = fen.charAt(i);
         if (c == "/") {
             x = 0;
@@ -75,7 +87,7 @@ const draw_pieces = (ctx, fen) => {
             x += parseInt(c);
         } else {
             let img = document.getElementById(c);
-            ctx.drawImage(img, x * 80 +1, y * 80 +1, 78, 78);
+            ctx.drawImage(img, x * 80, y * 80, 80, 80);
             x++;
         }
     }
@@ -99,22 +111,67 @@ const move = (from, to, expanded_fen) => {
 
 draw_pieces(ctx, fen);
 
+
 let from = "";
-let from_bool = false;
 document.addEventListener("click", (e) => {
-    if (from_bool == true) {
+    if (from != "") {
         let x = Math.floor((e.clientX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
         let y = Math.floor((e.clientY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
         let invalid_cordinate = (x < 0) || (x > 7) || (y < 0) || (y > 7);
-        if (invalid_cordinate) {
-            return;
-        }
+        if (invalid_cordinate) {return;}
+
+
         let to = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
         if (validate_move(from, to, expand_fen(fen)) == true) {
+            // Remove castling rights if king or rook moves
+            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "K") {
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("Q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+            }
+            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "k") {
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+            }
+            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "R" && from == "a1") {
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("Q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+            }
+            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "R" && from == "h1") {
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+            }
+            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "r" && from == "a8") {
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+            }
+            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "r" && from == "h8") {
+                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+            }
+            // Reset half-move clock if pawn moves or captures
+            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)).toLowerCase() == "p" ||
+            expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(to.charAt(1))].charAt(to.charCodeAt(0) - "a".charCodeAt(0)) != "1") {
+                expand_fen(fen).split(" ")[4] = "0"; // Reset half-move clock
+            }
+
             move(from, to, expand_fen(fen));
+
+            // Toggle turn and increment full-move number
+            let fen_parts = fen.split(" ");
+            fen_parts[4] = (parseInt(fen_parts[4]) + 1).toString(); // Increment half-move clock
+            if (fen_parts[1] == "b") {
+                fen_parts[5] = (parseInt(fen_parts[5]) + 1).toString(); // Increment full-move number on black move
+            }
+            fen_parts[1] = fen_parts[1] == "w" ? "b" : "w"; // Toggle turn
+            
+            
+            
+            
+            fen = fen_parts.join(" ");
             console.log("VALID MOVE", fen);
+            
+            // Check for draw by 50 move rule
+            if (fen_parts[4] == "100") {
+                console.log("DRAW: 50 move rule");
+                return;
+            }
         }
-        from_bool = false;
         from = "";
         document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(255, 20, 20)";
         return;
@@ -127,7 +184,10 @@ document.addEventListener("click", (e) => {
         return;
     }
     from = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
-    from_bool = true;
+    if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "1") {
+        from = "";
+        return;
+    }	
     document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(0, 255, 40)";
     
 });
@@ -141,7 +201,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 const validate_move = (from, to, expanded_fen) => {
-    let fen_arr = expanded_fen.split("/");
+    let fen_arr = expanded_fen.split(" ")[0].split("/");
     let from_x = from.charCodeAt(0) - "a".charCodeAt(0);
     let from_y = 8 - parseInt(from.charAt(1));
     let to_x = to.charCodeAt(0) - "a".charCodeAt(0);
@@ -155,12 +215,20 @@ const validate_move = (from, to, expanded_fen) => {
         return false;
     }
     if (piece == piece.toUpperCase()) {
+        if (expanded_fen.split(" ")[1] == "b") {
+            console.log("Invalid move: Its black's turn");
+            return false
+        }
         if (fen_arr[to_y].charAt(to_x) != "1" && fen_arr[to_y].charAt(to_x).toUpperCase() == fen_arr[to_y].charAt(to_x)) {
             console.log("Invalid move: Can't capture own piece");
             return false;
         }
     }
     if (piece == piece.toLowerCase()) {
+        if (expanded_fen.split(" ")[1] == "w") {
+            console.log("Invalid move: Its white's turn");
+            return false    
+        }
         if (fen_arr[to_y].charAt(to_x) != "1" && fen_arr[to_y].charAt(to_x).toLowerCase() == fen_arr[to_y].charAt(to_x)) {
             console.log("Invalid move: Can't capture own piece");
             return false;
@@ -220,6 +288,7 @@ const validate_move = (from, to, expanded_fen) => {
         return false;
     }
     if (piece == "r" || piece == "R") {
+        
         if (from_x != to_x && from_y != to_y) {
             console.log("Invalid move: Rooks can only move horizontally or vertically");
             return false;
@@ -380,7 +449,28 @@ const validate_move = (from, to, expanded_fen) => {
         if (Math.abs(from_x - to_x) <= 1 && Math.abs(from_y - to_y) <= 1) {
             return true;
         }
+        if (piece == "k") {
+            if (to == "g8" && fen_arr[0].charAt(6) == "1" && fen_arr[0].charAt(5) == "1" && expanded_fen.split(" ")[2].includes("k")) {
+                move("h8", "f8", expanded_fen);
+                return true;
+            }
+            if (to == "c8" && fen_arr[0].charAt(1) == "1" && fen_arr[0].charAt(2) == "1" && fen_arr[0].charAt(3) == "1" && expanded_fen.split(" ")[2].includes("q")) {
+                move("a8", "d8", expanded_fen);
+                return true;
+            }
+        }
+        if (piece == "K") {
+            if (to == "g1" && fen_arr[7].charAt(6) == "1" && fen_arr[7].charAt(5) == "1" && expanded_fen.split(" ")[2].includes("K")) {
+                move("h1", "f1", expanded_fen);
+                return true;
+            }
+            if (to == "c1" && fen_arr[7].charAt(1) == "1" && fen_arr[7].charAt(2) == "1" && fen_arr[0].charAt(3) == "1" && expanded_fen.split(" ")[2].includes("Q")) {
+                move("a1", "d1", expanded_fen);
+                return true;
+            }
+        }
         console.log("Invalid move: Kings can only move one step in any direction");
+        return false;
     }
     return true;
 }
