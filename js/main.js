@@ -49,7 +49,7 @@ const expand_fen = (fen) => {
     }
     return expanded_fen + " " + fen.split(" ")[1] + " " + fen.split(" ")[2] + " " + fen.split(" ")[3] + " " + parseInt(fen.split(" ")[4]) + " " + parseInt(fen.split(" ")[5]);
 }
-console.log(expand_fen(fen));
+
 
 const condence_fen = (expanded_fen) => {
     expanded_fen = expanded_fen.split(" ");
@@ -73,7 +73,7 @@ const condence_fen = (expanded_fen) => {
     return fen + " " + expanded_fen[1] + " " + expanded_fen[2] + " " + expanded_fen[3] + " " + parseInt(expanded_fen[4]) + " " + parseInt(expanded_fen[5]);
 }
 
-console.log(condence_fen(expand_fen(fen)));
+
 
 const draw_pieces = (ctx, fen) => {
     let x = 0;
@@ -118,11 +118,12 @@ document.addEventListener("click", (e) => {
         let x = Math.floor((e.clientX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
         let y = Math.floor((e.clientY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
         let invalid_cordinate = (x < 0) || (x > 7) || (y < 0) || (y > 7);
-        if (invalid_cordinate) {return;}
+        if (invalid_cordinate) return;
 
 
         let to = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
-        if (validate_move(from, to, expand_fen(fen)) == true) {
+        if (get_legal_moves(from, expand_fen(fen)).includes(to)) {
+            
             // Remove castling rights if king or rook moves
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "K") {
                 fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
@@ -149,6 +150,16 @@ document.addEventListener("click", (e) => {
             expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(to.charAt(1))].charAt(to.charCodeAt(0) - "a".charCodeAt(0)) != "1") {
                 expand_fen(fen).split(" ")[4] = "0"; // Reset half-move clock
             }
+            let piece = expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0));
+            if (piece == "K" && from == "e1" && to == "g1") {
+                move("h1", "f1", expand_fen(fen));
+            } else if ( piece == "K" && from == "e1" && to == "c1") {
+                move("a1", "d1", expand_fen(fen));
+            } else if ( piece == "k" && from == "e8" && to == "g8") {
+                move("h8", "f8", expand_fen(fen));
+            } else if ( piece == "k" && from == "e8" && to == "c8") {
+                move("a8", "d8", expand_fen(fen));
+            }
 
             move(from, to, expand_fen(fen));
 
@@ -174,20 +185,41 @@ document.addEventListener("click", (e) => {
         }
         from = "";
         document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(255, 20, 20)";
+        draw_board(ctx);
+        draw_pieces(ctx, fen);
         return;
     }
 
     let x = Math.floor((e.clientX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
     let y = Math.floor((e.clientY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
     let invalid_cordinate = (x < 0) || (x > 7) || (y < 0) || (y > 7);
-    if (invalid_cordinate) {
+    if (invalid_cordinate) return;
+
+    from = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
+
+    // Check if from square is occupied by a piece of the correct color
+    let piece = expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0));
+    if (piece == piece.toUpperCase() && expand_fen(fen).split(" ")[1] == "b") {
+        from = "";
         return;
     }
-    from = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
+    if (piece == piece.toLowerCase() && expand_fen(fen).split(" ")[1] == "w") {
+        from = "";
+        return;
+    }
+    // Check if from square is empty
     if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "1") {
         from = "";
         return;
-    }	
+    }
+
+    for (square of get_legal_moves(from, expand_fen(fen))) {
+        let x = square.charCodeAt(0) - "a".charCodeAt(0);
+        let y = 8 - parseInt(square.charAt(1));
+        ctx.fillStyle = "rgba(0, 255, 40, 0.5)";
+        ctx.fillRect(x * 80, y * 80, 80, 80);
+    }
+    console.log("FROM", from);
     document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(0, 255, 40)";
     
 });
@@ -200,278 +232,146 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
-const validate_move = (from, to, expanded_fen) => {
+const get_legal_moves = (from, expanded_fen) => {
     let fen_arr = expanded_fen.split(" ")[0].split("/");
     let from_x = from.charCodeAt(0) - "a".charCodeAt(0);
     let from_y = 8 - parseInt(from.charAt(1));
-    let to_x = to.charCodeAt(0) - "a".charCodeAt(0);
-    let to_y = 8 - parseInt(to.charAt(1));
     let piece = fen_arr[from_y].charAt(from_x);
+    let turn = expanded_fen.split(" ")[1];
+    let castling_rights = expanded_fen.split(" ")[2];
+    let en_passant_target = expanded_fen.split(" ")[3];
+    let legal_moves = [];
+
+
     if (piece == "1") {
-        return false;
+        console.log("Invalid piece: No piece at the from position");
+        return legal_moves; // No piece at the from position
     }
-    if (from_x == to_x && from_y == to_y) {
-        console.log("Invalid move: cant move to same position");
-        return false;
+
+    // Define possible move directions for each piece type
+    const directions = {
+        'P': [[-1, -1], [0, -1], [1, -1]], // White pawn
+        'p': [[-1, 1], [0, 1], [1, 1]], // Black pawn
+        'R': [[0, 1], [1, 0], [0, -1], [-1, 0]], // Rook
+        'N': [[-2, -1], [-1, -2], [1, -2], [2, -1], [2, 1], [1, 2], [-1, 2], [-2, 1]], // Knight
+        'B': [[-1, -1], [-1, 1], [1, -1], [1, 1]], // Bishop
+        'Q': [[0, 1], [1, 0], [0, -1], [-1, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]], // Queen
+        'K': [[0, 1], [1, 0], [0, -1], [-1, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]] // King
+    };
+
+    // Get the directions for the piece
+    let piece_directions;
+    if (piece == 'P' || piece == 'p') {
+        piece_directions = directions[piece];
+    } else {
+        piece_directions = directions[piece.toUpperCase()];
     }
-    if (piece == piece.toUpperCase()) {
-        if (expanded_fen.split(" ")[1] == "b") {
-            console.log("Invalid move: Its black's turn");
-            return false
-        }
-        if (fen_arr[to_y].charAt(to_x) != "1" && fen_arr[to_y].charAt(to_x).toUpperCase() == fen_arr[to_y].charAt(to_x)) {
-            console.log("Invalid move: Can't capture own piece");
-            return false;
-        }
+    if (!piece_directions) {
+        console.log("Invalid piece: No directions for the piece");
+        return legal_moves; // Invalid piece
     }
-    if (piece == piece.toLowerCase()) {
-        if (expanded_fen.split(" ")[1] == "w") {
-            console.log("Invalid move: Its white's turn");
-            return false    
-        }
-        if (fen_arr[to_y].charAt(to_x) != "1" && fen_arr[to_y].charAt(to_x).toLowerCase() == fen_arr[to_y].charAt(to_x)) {
-            console.log("Invalid move: Can't capture own piece");
-            return false;
-        }
-    }
-    if (piece == "p") {
-        if (from_x == to_x) {
-            //Checks for vertical movement
-            if (from_y - to_y == -1) {
-                if (fen_arr[to_y].charAt(to_x) == "1") {
-                    return true;
-                }
-            } else if (from_y - to_y == -2 && from_y == 1) {
-                //Checks for double vertical movement from starting position
-                if (fen_arr[to_y -1].charAt(to_x) == "1" && fen_arr[to_y].charAt(to_x) == "1") {
-                    return true;
+    
+    // Generate all possible moves
+    for (let dir of piece_directions) {
+        let x = from_x + dir[0];
+        let y = from_y + dir[1];
+        while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+            let target_piece = fen_arr[y].charAt(x);
+            if (piece == 'P' || piece == 'p') {
+                // Handle pawn moves separately
+                if (dir[0] == 0) {
+                    // Forward move
+                    if (target_piece == "1") {
+                        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + x) + (8 - y));
+                    } 
+                    break; // Stop after forward move
+                } else {
+                    // Diagonal capture
+                    if (target_piece != '1' && ((piece == 'P' && target_piece == target_piece.toLowerCase()) || (piece == 'p' && target_piece == target_piece.toUpperCase()))) {
+                        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + x) + (8 - y));
+                    }
+                    break; // Stop after diagonal move
                 }
             } else {
-                console.log("Invalid move: Can only move one or two steps forward");
-            }
-        } else {
-            //Checks for diagonal movement
-            if (Math.abs(from_x - to_x) == 1 && Math.abs(from_y - to_y) == 1) {
-                
-                if (fen_arr[to_y].charAt(to_x) != "1" && fen_arr[to_y].charAt(to_x).toUpperCase() == fen_arr[to_y].charAt(to_x)) {
-                    return true;
+                // Handle other pieces
+                if (target_piece == "1" || (piece == piece.toUpperCase() && target_piece == target_piece.toLowerCase()) || (piece == piece.toLowerCase() && target_piece == target_piece.toUpperCase())) {
+                    legal_moves.push(String.fromCharCode("a".charCodeAt(0) + x) + (8 - y));
+                    if (target_piece != "1") break; // Stop if capturing
+                } else {
+                    break; // Stop if blocked
                 }
             }
+            if (piece.toUpperCase() == 'N' || piece.toUpperCase() == 'K') break; // Stop for non-sliding pieces
+            x += dir[0];
+            y += dir[1];
         }
-        return false;
     }
-    if (piece == "P") {
-        if (from_x == to_x) {
-            // Checks for vertical movement
-            if (from_y - to_y == 1) {
-                if (fen_arr[to_y].charAt(to_x) == "1") {
-                    return true;
-                }
-
-            } else if (from_y - to_y == 2 && from_y == 6) {
-                //Checks for double vertical movement from starting position
-
-                if (fen_arr[to_y].charAt(to_x) == "1" && fen_arr[to_y +1].charAt(to_x) == "1") {
-                    return true;
-                }
-            }  else {
-                console.log("Invalid move: Can only move one or two steps forward");
-            }
-        } else {
-            //Checks for diagonal movement
-            if (Math.abs(from_x - to_x) == 1 && Math.abs(from_y - to_y) == 1) {
-                if (fen_arr[to_y].charAt(to_x) != "1" && fen_arr[to_y].charAt(to_x).toLowerCase() == fen_arr[to_y].charAt(to_x)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    if (piece == "r" || piece == "R") {
-        
-        if (from_x != to_x && from_y != to_y) {
-            console.log("Invalid move: Rooks can only move horizontally or vertically");
-            return false;
-        }
-        if (from_x == to_x) {
-            //Checks for vertical movement
-            let min = Math.min(from_y, to_y);
-            let max = Math.max(from_y, to_y);
-            for (let i = min + 1; i < max; i++) {
-                if (fen_arr[i].charAt(from_x) != "1") {
-                    console.log("Invalid move: cant move through pieces");
-                    return false;
-                }
-            }
-        } else if (from_y == to_y) {
-            //Checks for horizontal movement
-            let min = Math.min(from_x, to_x);
-            let max = Math.max(from_x, to_x);
-            for (let i = min + 1; i < max; i++) {
-                if (fen_arr[from_y].charAt(i) != "1") {
-                    console.log("Invalid move: cant move through pieces");
-                    return false;
-                }
-            }
-        }
-        return true;
+    // Handle double pawn moves
+    if (piece == 'P' && from_y == 6 && fen_arr[5].charAt(from_x) == '1' && fen_arr[4].charAt(from_x) == '1') {
+        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + from_x) + 4); // White double pawn move
+    } else if (piece == 'p' && from_y == 1 && fen_arr[2].charAt(from_x) == '1' && fen_arr[3].charAt(from_x) == '1') {
+        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + from_x) + 5); // Black double pawn move
     }
     
 
-    if (piece == "b" || piece == "B") {
-        if (Math.abs(from_x - to_x) != Math.abs(from_y - to_y)) {
-            console.log("Invalid move: Bishops can only move diagonally");
-            return false;
-        }
-
-
-        if (from_x - to_x > 0) {
-            if (from_y - to_y > 0) {
-                let min = Math.min(from_x, to_x);
-                let max = Math.max(from_x, to_x);
-                for (let i = 1; i < max - min; i++) {
-                    if (fen_arr[from_y - i].charAt(from_x - i) != "1") {
-                        return false;
-                    }
-                }
-            } else if (from_y - to_y < 0) {
-                let min = Math.min(from_x, to_x);
-                let max = Math.max(from_x, to_x);
-                for (let i = 1; i < max - min; i++) {
-                    if (fen_arr[from_y + i].charAt(from_x - i) != "1") {
-                        return false;
-                    }
-                }
+    // Handle castling
+    if (piece.toUpperCase() == 'K') {
+        if (turn == 'w' && from == 'e1') {
+            if (castling_rights.includes('K') && fen_arr[7].substring(5, 7) == '11' && !is_under_attack('e1', expanded_fen) && !is_under_attack('f1', expanded_fen) && !is_under_attack('g1', expanded_fen)) {
+                legal_moves.push('g1'); // White kingside castling
             }
-        } else if (from_x - to_x < 0) {
-            if (from_y - to_y > 0) {
-                let min = Math.min(from_x, to_x);
-                let max = Math.max(from_x, to_x);
-                for (let i = 1; i < max - min; i++) {
-                    if (fen_arr[from_y - i].charAt(from_x + i) != "1") {
-                        return false;
-                    }
-                }
-            } else if (from_y - to_y < 0) {
-                let min = Math.min(from_x, to_x);
-                let max = Math.max(from_x, to_x);
-                for (let i = 1; i < max - min; i++) {
-                    if (fen_arr[from_y + i].charAt(from_x + i) != "1") {
-                        return false;
-                    }
-                }
+            if (castling_rights.includes('Q') && fen_arr[7].substring(1, 4) == '111' && !is_under_attack('e1', expanded_fen) && !is_under_attack('d1', expanded_fen) && !is_under_attack('c1', expanded_fen)) {
+                legal_moves.push('c1'); // White queenside castling
+            }
+        } else if (turn == 'b' && from == 'e8') {
+            if (castling_rights.includes('k') && fen_arr[0].substring(5, 7) == '11' && !is_under_attack('e8', expanded_fen) && !is_under_attack('f8', expanded_fen) && !is_under_attack('g8', expanded_fen)) {
+                legal_moves.push('g8'); // Black kingside castling
+            }
+            if (castling_rights.includes('q') && fen_arr[0].substring(1, 4) == '111' && !is_under_attack('e8', expanded_fen) && !is_under_attack('d8', expanded_fen) && !is_under_attack('c8', expanded_fen)) {
+                legal_moves.push('c8'); // Black queenside castling
             }
         }
     }
 
-    if (piece == "n" || piece == "N") {
-        if (Math.abs(from_x - to_x) == 2 && Math.abs(from_y - to_y) == 1) {
-            return true;
-        }
-        if (Math.abs(from_x - to_x) == 1 && Math.abs(from_y - to_y) == 2) {
-            return true;
-        }
-        console.log("Invalid move: Knights can only move in L shape");
-        return false;
-    }
+    // Handle en passant
+    if (piece.toUpperCase() == 'P') {
+        let en_passant_x = en_passant_target.charCodeAt(0) - "a".charCodeAt(0);
+        let en_passant_y = 8 - parseInt(en_passant_target.charAt(1));
 
-    if (piece == "q" || piece == "Q") {
-        if (from_x != to_x && from_y != to_y && Math.abs(from_x - to_x) != Math.abs(from_y - to_y)) {
-            console.log("Invalid move: Queens can only move horizontally, vertically or diagonally");
-            return false;
-        }
-        if (from_x == to_x) {
-            //Checks for vertical movement
-            let min = Math.min(from_y, to_y);
-            let max = Math.max(from_y, to_y);
-            for (let i = min + 1; i < max; i++) {
-                if (fen_arr[i].charAt(from_x) != "1") {
-                    console.log("Invalid move: cant move through pieces");
-                    return false;
-                }
-            }
-        } else if (from_y == to_y) {
-            //Checks for horizontal movement
-            let min = Math.min(from_x, to_x);
-            let max = Math.max(from_x, to_x);
-            for (let i = min + 1; i < max; i++) {
-                if (fen_arr[from_y].charAt(i) != "1") {
-                    console.log("Invalid move: cant move through pieces");
-                    return false;
-                }
-            }
-        } else {
-            if (from_x - to_x > 0) {
-                if (from_y - to_y > 0) {
-                    let min = Math.min(from_x, to_x);
-                    let max = Math.max(from_x, to_x);
-                    for (let i = 1; i < max - min; i++) {
-                        if (fen_arr[from_y - i].charAt(from_x - i) != "1") {
-                            console.log("Invalid move: cant move through pieces");
-                            return false;
-                        }
-                    }
-                } else if (from_y - to_y < 0) {
-                    let min = Math.min(from_x, to_x);
-                    let max = Math.max(from_x, to_x);
-                    for (let i = 1; i < max - min; i++) {
-                        if (fen_arr[from_y + i].charAt(from_x - i) != "1") {
-                            console.log("Invalid move: cant move through pieces");
-                            return false;
-                        }
-                    }
-                }
-            } else if (from_x - to_x < 0) {
-                if (from_y - to_y > 0) {
-                    let min = Math.min(from_x, to_x);
-                    let max = Math.max(from_x, to_x);
-                    for (let i = 1; i < max - min; i++) {
-                        if (fen_arr[from_y - i].charAt(from_x + i) != "1") {
-                            console.log("Invalid move: cant move through pieces");
-                            return false;
-                        }
-                    }
-                } else if (from_y - to_y < 0) {
-                    let min = Math.min(from_x, to_x);
-                    let max = Math.max(from_x, to_x);
-                    for (let i = 1; i < max - min; i++) {
-                        if (fen_arr[from_y + i].charAt(from_x + i) != "1") {
-                            console.log("Invalid move: cant move through pieces");
-                            return false;
-                        }
-                    }
-                }
-            } 
+        if (turn == 'w' && from_y == 3 && en_passant_y == 2 && Math.abs(from_x - en_passant_x) == 1) {
+            legal_moves.push(en_passant_target);
+        } else if (turn == 'b' && from_y == 4 && en_passant_y == 5 && Math.abs(from_x - en_passant_x) == 1) {
+            legal_moves.push(en_passant_target);
         }
     }
 
-    if (piece == "k" || piece == "K") {
-        if (Math.abs(from_x - to_x) <= 1 && Math.abs(from_y - to_y) <= 1) {
-            return true;
-        }
-        if (piece == "k") {
-            if (to == "g8" && fen_arr[0].charAt(6) == "1" && fen_arr[0].charAt(5) == "1" && expanded_fen.split(" ")[2].includes("k")) {
-                move("h8", "f8", expanded_fen);
-                return true;
-            }
-            if (to == "c8" && fen_arr[0].charAt(1) == "1" && fen_arr[0].charAt(2) == "1" && fen_arr[0].charAt(3) == "1" && expanded_fen.split(" ")[2].includes("q")) {
-                move("a8", "d8", expanded_fen);
-                return true;
-            }
-        }
-        if (piece == "K") {
-            if (to == "g1" && fen_arr[7].charAt(6) == "1" && fen_arr[7].charAt(5) == "1" && expanded_fen.split(" ")[2].includes("K")) {
-                move("h1", "f1", expanded_fen);
-                return true;
-            }
-            if (to == "c1" && fen_arr[7].charAt(1) == "1" && fen_arr[7].charAt(2) == "1" && fen_arr[0].charAt(3) == "1" && expanded_fen.split(" ")[2].includes("Q")) {
-                move("a1", "d1", expanded_fen);
-                return true;
-            }
-        }
-        console.log("Invalid move: Kings can only move one step in any direction");
-        return false;
+    if (legal_moves.length == 0) {
+        console.log("No legal moves");
     }
-    return true;
-}
+
+    return legal_moves;
+};
+
+
+const is_under_attack = (square, expanded_fen) => {
+    let fen_arr = expanded_fen.split(" ")[0].split("/");
+    let turn = expanded_fen.split(" ")[1];
+    let opponent_turn = turn == 'w' ? 'b' : 'w';
+    let opponent_pieces = opponent_turn == 'w' ? 'PRNBQK' : 'prnbqk';
+
+    // Iterate through all squares to find opponent pieces
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            let piece = fen_arr[row].charAt(col);
+            if (opponent_pieces.includes(piece)) {
+                let from = String.fromCharCode("a".charCodeAt(0) + col) + (8 - row);
+                let legal_moves = get_legal_moves(from, expanded_fen);
+                if (legal_moves.includes(square)) {
+                    return true; // Square is under attack
+                }
+            }
+        }
+    }
+    return false; // Square is not under attack
+};
 
