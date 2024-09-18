@@ -126,24 +126,64 @@ document.addEventListener("click", (e) => {
             
             // Remove castling rights if king or rook moves
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "K") {
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("Q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("Q", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
             }
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "k") {
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("q", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
             }
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "R" && from == "a1") {
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("Q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("Q", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
             }
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "R" && from == "h1") {
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " +
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
             }
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "r" && from == "a8") {
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("q", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("q", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
             }
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "r" && from == "h8") {
-                fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + fen.split(" ")[3] + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+                fen = fen.split(" ")[0] + " " + 
+                fen.split(" ")[1] + " " + 
+                fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
+                fen.split(" ")[3] + " " + 
+                fen.split(" ")[4] + " " + 
+                fen.split(" ")[5];
             }
             // Reset half-move clock if pawn moves or captures
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)).toLowerCase() == "p" ||
@@ -151,15 +191,10 @@ document.addEventListener("click", (e) => {
                 expand_fen(fen).split(" ")[4] = "0"; // Reset half-move clock
             }
             let piece = expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0));
-            if (piece == "K" && from == "e1" && to == "g1") {
-                move("h1", "f1", expand_fen(fen));
-            } else if ( piece == "K" && from == "e1" && to == "c1") {
-                move("a1", "d1", expand_fen(fen));
-            } else if ( piece == "k" && from == "e8" && to == "g8") {
-                move("h8", "f8", expand_fen(fen));
-            } else if ( piece == "k" && from == "e8" && to == "c8") {
-                move("a8", "d8", expand_fen(fen));
-            }
+            if      ( piece == "K" && from == "e1" && to == "g1") {move("h1", "f1", expand_fen(fen));} 
+            else if ( piece == "K" && from == "e1" && to == "c1") {move("a1", "d1", expand_fen(fen));} 
+            else if ( piece == "k" && from == "e8" && to == "g8") {move("h8", "f8", expand_fen(fen));} 
+            else if ( piece == "k" && from == "e8" && to == "c8") {move("a8", "d8", expand_fen(fen));}
 
             move(from, to, expand_fen(fen));
 
@@ -212,7 +247,10 @@ document.addEventListener("click", (e) => {
         from = "";
         return;
     }
-
+    if (get_legal_moves(from, expand_fen(fen)).length == 0) {
+        from = "";
+        return;
+    }
     for (square of get_legal_moves(from, expand_fen(fen))) {
         let x = square.charCodeAt(0) - "a".charCodeAt(0);
         let y = 8 - parseInt(square.charAt(1));
@@ -315,23 +353,24 @@ const get_legal_moves = (from, expanded_fen) => {
     
 
     // Handle castling
-    if (piece.toUpperCase() == 'K') {
-        if (turn == 'w' && from == 'e1') {
-            if (castling_rights.includes('K') && fen_arr[7].substring(5, 7) == '11' && !is_under_attack('e1', expanded_fen) && !is_under_attack('f1', expanded_fen) && !is_under_attack('g1', expanded_fen)) {
-                legal_moves.push('g1'); // White kingside castling
-            }
-            if (castling_rights.includes('Q') && fen_arr[7].substring(1, 4) == '111' && !is_under_attack('e1', expanded_fen) && !is_under_attack('d1', expanded_fen) && !is_under_attack('c1', expanded_fen)) {
-                legal_moves.push('c1'); // White queenside castling
-            }
-        } else if (turn == 'b' && from == 'e8') {
-            if (castling_rights.includes('k') && fen_arr[0].substring(5, 7) == '11' && !is_under_attack('e8', expanded_fen) && !is_under_attack('f8', expanded_fen) && !is_under_attack('g8', expanded_fen)) {
-                legal_moves.push('g8'); // Black kingside castling
-            }
-            if (castling_rights.includes('q') && fen_arr[0].substring(1, 4) == '111' && !is_under_attack('e8', expanded_fen) && !is_under_attack('d8', expanded_fen) && !is_under_attack('c8', expanded_fen)) {
-                legal_moves.push('c8'); // Black queenside castling
+    
+        if (piece.toUpperCase() == 'K') {
+            if (turn == 'w' && from == 'e1') {
+                if (castling_rights.includes('K') && fen_arr[7].substring(5, 7) == '11' && !is_under_attack('e1', expanded_fen) && !is_under_attack('f1', expanded_fen) && !is_under_attack('g1', expanded_fen)) {
+                    legal_moves.push('g1'); // White kingside castling
+                }
+                if (castling_rights.includes('Q') && fen_arr[7].substring(1, 4) == '111' && !is_under_attack('e1', expanded_fen) && !is_under_attack('d1', expanded_fen) && !is_under_attack('c1', expanded_fen)) {
+                    legal_moves.push('c1'); // White queenside castling
+                }
+            } else if (turn == 'b' && from == 'e8') {
+                if (castling_rights.includes('k') && fen_arr[0].substring(5, 7) == '11' && !is_under_attack('e8', expanded_fen) && !is_under_attack('f8', expanded_fen) && !is_under_attack('g8', expanded_fen)) {
+                    legal_moves.push('g8'); // Black kingside castling
+                }
+                if (castling_rights.includes('q') && fen_arr[0].substring(1, 4) == '111' && !is_under_attack('e8', expanded_fen) && !is_under_attack('d8', expanded_fen) && !is_under_attack('c8', expanded_fen)) {
+                    legal_moves.push('c8'); // Black queenside castling
+                }
             }
         }
-    }
 
     // Handle en passant
     if (piece.toUpperCase() == 'P') {
@@ -348,30 +387,142 @@ const get_legal_moves = (from, expanded_fen) => {
     if (legal_moves.length == 0) {
         console.log("No legal moves");
     }
-
-    return legal_moves;
-};
-
-
-const is_under_attack = (square, expanded_fen) => {
-    let fen_arr = expanded_fen.split(" ")[0].split("/");
-    let turn = expanded_fen.split(" ")[1];
-    let opponent_turn = turn == 'w' ? 'b' : 'w';
-    let opponent_pieces = opponent_turn == 'w' ? 'PRNBQK' : 'prnbqk';
-
-    // Iterate through all squares to find opponent pieces
-    for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-            let piece = fen_arr[row].charAt(col);
-            if (opponent_pieces.includes(piece)) {
-                let from = String.fromCharCode("a".charCodeAt(0) + col) + (8 - row);
-                let legal_moves = get_legal_moves(from, expanded_fen);
-                if (legal_moves.includes(square)) {
-                    return true; // Square is under attack
+    if (piece.toLowerCase() == "k"){
+        if (turn == "w") {
+            for (let move of legal_moves) {
+                if (is_under_attack(move, expanded_fen)) {
+                    legal_moves = legal_moves.filter((value) => value != move);
+                }
+            }
+        }
+        if (turn == "b") {
+            for (let move of legal_moves) {
+                if (is_under_attack(move, expanded_fen)) {
+                    legal_moves = legal_moves.filter((value) => value != move);
                 }
             }
         }
     }
-    return false; // Square is not under attack
+
+
+    return legal_moves;
 };
 
+const get_movement_pattern = (square, expanded_fen) => {
+    let from_x = square.charCodeAt(0) - "a".charCodeAt(0);
+    let from_y = 8 - parseInt(square.charAt(1));
+
+    let movement_pattern = [
+        // - - diagonal
+        [[-1, -1], [-2, -2], [-3, -3], [-4, -4], [-5, -5], [-6, -6], [-7, -7]],
+        // - 0 horizontal
+        [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0], [-7, 0]],
+        // - + diagonal
+        [[-1, 1], [-2, 2], [-3, 3], [-4, 4], [-5, 5], [-6, 6], [-7, 7]],
+        // 0 + vertical
+        [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7]],
+        // + + diagonal
+        [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]],
+        // + 0 horizontal
+        [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0]],
+        // + - diagonal
+        [[1, -1], [2, -2], [3, -3], [4, -4], [5, -5], [6, -6], [7, -7]],
+        // 0 - vertical
+        [[0, -1], [0, -2], [0, -3], [0, -4], [0, -5], [0, -6], [0, -7]]
+    ];
+
+    //filter Moves that are out of bounds
+    for (let i = 0; i < movement_pattern.length; i++) {
+        for (let j = 0; j < movement_pattern[i].length; j++) {
+            let x = from_x + movement_pattern[i][j][0];
+            let y = from_y + movement_pattern[i][j][1];
+            if (x < 0 || x > 7 || y < 0 || y > 7) {
+                movement_pattern[i][j] = null;
+            }
+        }
+    }
+
+    //filter Moves that are blocked
+    for (let i = 0; i < movement_pattern.length; i++) {
+        for (let j = 0; j < movement_pattern[i].length; j++) {
+            if (movement_pattern[i][j] == null) {
+                continue;
+            }
+            let x = from_x + movement_pattern[i][j][0];
+            let y = from_y + movement_pattern[i][j][1];
+            if (expanded_fen.split(" ")[0].split("/")[y].charAt(x) != "1") {
+                for (let k = j + 1; k < movement_pattern[i].length; k++) {
+                    movement_pattern[i][k] = null;
+                }
+            }
+        }
+    }
+    return movement_pattern;
+}
+
+const is_under_attack = (square, expanded_fen) => {
+    let fen_arr = expanded_fen.split(" ")[0].split("/");
+    let from_x = square.charCodeAt(0) - "a".charCodeAt(0);
+    let from_y = 8 - parseInt(square.charAt(1));
+    let turn = expanded_fen.split(" ")[1];
+    
+    let movement_pattern = get_movement_pattern(square, expanded_fen);
+
+    for (let i = 0; i < movement_pattern.length; i++) {
+        for (let j = 0; j < movement_pattern[i].length; j++) {
+            if (movement_pattern[i][j] == null) {
+                continue;
+            }
+            let x = from_x + movement_pattern[i][j][0];
+            let y = from_y + movement_pattern[i][j][1];
+            let target_piece = fen_arr[y].charAt(x);
+            if (target_piece == "1") {
+                continue;
+            }
+            // if bishop or queen attacks square
+            if (Math.abs((x - from_x) / (y - from_y)) == 1) {
+                if (turn == "w" && "bq".includes(target_piece)) {
+                    return true;
+                }
+                if (turn == "b" && "BQ".includes(target_piece)) {
+                    return true;
+                }
+            }
+            // if rook or queen attacks square
+            if (x == from_x || y == from_y) {
+                if (turn == "w" && "rq".includes(target_piece)) {
+                    return true;
+                }
+                if (turn == "b" && "RQ".includes(target_piece)) {
+                    return true;
+                }
+            }
+            // if horse attacks square
+            if (Math.abs((x - from_x) / (y - from_y)) == 0.5 || Math.abs((x - from_x) / (y - from_y)) == 2) {
+                if (turn == "w" && "n".includes(target_piece)) {
+                    return true;
+                }
+                if (turn == "b" && "N".includes(target_piece)) {
+                    return true;
+                }
+            }
+            // if king attacks square
+            if (Math.abs(Math.sqrt((x - from_x) ** 2 + (y - from_y) ** 2)) == 1) {
+                if (turn == "w" && "k".includes(target_piece)) {
+                    return true;
+                }
+                if (turn == "b" && "K".includes(target_piece)) {
+                    return true;
+                }
+            }
+            // if pawn attacks square
+            if (turn == "w" && "p".includes(target_piece) && Math.abs(x - from_x) == 1 && y - from_y == -1) {
+                return true;
+            }
+            if (turn == "b" && "P".includes(target_piece) && Math.abs(x - from_x) == 1 && y - from_y == 1) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
