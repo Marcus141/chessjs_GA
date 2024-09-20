@@ -109,6 +109,19 @@ const move = (from, to, expanded_fen) => {
     draw_pieces(ctx, fen);
 }
 
+const hypothetical_move = (from, to, expanded_fen) => {
+    let fen_arr = expanded_fen.split("/");
+    let from_x = from.charCodeAt(0) - "a".charCodeAt(0);
+    let from_y = 8 - parseInt(from.charAt(1));
+    let to_x = to.charCodeAt(0) - "a".charCodeAt(0);
+    let to_y = 8 - parseInt(to.charAt(1));
+    let piece = fen_arr[from_y].charAt(from_x);
+    fen_arr[from_y] = fen_arr[from_y].substring(0, from_x) + "1" + fen_arr[from_y].substring(from_x + 1);
+    fen_arr[to_y] = fen_arr[to_y].substring(0, to_x) + piece + fen_arr[to_y].substring(to_x + 1);
+    expanded_fen = fen_arr.join("/");
+    return condence_fen(expanded_fen);
+}
+
 draw_pieces(ctx, fen);
 
 
@@ -198,6 +211,8 @@ document.addEventListener("click", (e) => {
 
             move(from, to, expand_fen(fen));
 
+            
+
             // Toggle turn and increment full-move number
             let fen_parts = fen.split(" ");
             fen_parts[4] = (parseInt(fen_parts[4]) + 1).toString(); // Increment half-move clock
@@ -211,6 +226,11 @@ document.addEventListener("click", (e) => {
             
             fen = fen_parts.join(" ");
             console.log("VALID MOVE", fen);
+
+            if (is_checkmate(expand_fen(fen))) {
+                console.log("CHECKMATE");
+                return;
+            }
             
             // Check for draw by 50 move rule
             if (fen_parts[4] == "100") {
@@ -269,6 +289,26 @@ document.addEventListener("keydown", (e) => {
         document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(255, 20, 20)";
     }
 });
+const get_all_legal_moves = (expanded_fen) => {
+    // Get all legal moves from each players pieces
+    let fen_arr = expanded_fen.split(" ")[0].split("/");
+    let turn = expanded_fen.split(" ")[1];
+    let legal_moves = {};
+    for (let i = 0; i < fen_arr.length; i++) {
+        for (let j = 0; j < fen_arr[i].length; j++) {
+            let piece = fen_arr[i].charAt(j);
+            if ((turn == "w" && piece == piece.toUpperCase() && piece != "1")) {
+                let square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                legal_moves[square] = get_legal_moves(square, expanded_fen);
+            }
+            if ((turn == "b" && piece == piece.toLowerCase() && piece != "1")) {
+                let square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                legal_moves[square] = get_legal_moves(square, expanded_fen);
+            }
+        }
+    }
+    return legal_moves;
+}
 
 const get_legal_moves = (from, expanded_fen) => {
     let fen_arr = expanded_fen.split(" ")[0].split("/");
@@ -404,6 +444,12 @@ const get_legal_moves = (from, expanded_fen) => {
         }
     }
 
+    // Remove moves that put the king in check
+    for (let move of legal_moves) {
+        if (is_in_check(expand_fen(hypothetical_move(from, move, expanded_fen)))) {
+            legal_moves = legal_moves.filter((value) => value != move);
+        }
+    }
 
     return legal_moves;
 };
@@ -526,3 +572,57 @@ const is_under_attack = (square, expanded_fen) => {
     }
     return false;
 }
+
+const is_in_check = (expanded_fen) => {
+    let fen_arr = expanded_fen.split(" ")[0].split("/");
+    let turn = expanded_fen.split(" ")[1];
+    let king_square = "";
+    for (let i = 0; i < fen_arr.length; i++) {
+        for (let j = 0; j < fen_arr[i].length; j++) {
+            let piece = fen_arr[i].charAt(j);
+            if (turn == "w" && piece == "K") {
+                king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+            }
+            if (turn == "b" && piece == "k") {
+                king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+            }
+        }
+    }
+    return is_under_attack(king_square, expanded_fen);
+}
+
+const is_checkmate = (expanded_fen) => {
+    // check if king is still in check after all possible moves
+    let turn = expanded_fen.split(" ")[1];
+    
+    let all_legal_moves = Object.entries(get_all_legal_moves(expanded_fen));
+    
+    for (let i = 0; i < all_legal_moves.length; i++) {
+        if (all_legal_moves[i][1].length == 0) {
+            continue;
+        }
+        
+        for (let j = 0; j < all_legal_moves[i][1].length; j++) {
+            
+            let hypothetical_fen = expand_fen(hypothetical_move(all_legal_moves[i][0], all_legal_moves[i][1][j], expanded_fen));
+            let fen_arr = expand_fen(hypothetical_fen).split(" ")[0].split("/");
+            let king_square = "";
+            for (let i = 0; i < fen_arr.length; i++) {
+                for (let j = 0; j < fen_arr[i].length; j++) {
+                    let piece = fen_arr[i].charAt(j);
+                    if (turn == "w" && piece == "K") {
+                        king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                    }
+                    if (turn == "b" && piece == "k") {
+                        king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                    }
+                }
+            }
+            if (!is_under_attack(king_square, hypothetical_fen)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
