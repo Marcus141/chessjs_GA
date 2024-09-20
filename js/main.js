@@ -128,6 +128,8 @@ draw_pieces(ctx, fen);
 let from = "";
 document.addEventListener("click", (e) => {
     if (from != "") {
+
+
         let x = Math.floor((e.clientX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
         let y = Math.floor((e.clientY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
         let invalid_cordinate = (x < 0) || (x > 7) || (y < 0) || (y > 7);
@@ -136,6 +138,9 @@ document.addEventListener("click", (e) => {
 
         let to = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
         if (get_legal_moves(from, expand_fen(fen)).includes(to)) {
+
+            
+
             
             // Remove castling rights if king or rook moves
             if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "K") {
@@ -209,9 +214,29 @@ document.addEventListener("click", (e) => {
             else if ( piece == "k" && from == "e8" && to == "g8") {move("h8", "f8", expand_fen(fen));} 
             else if ( piece == "k" && from == "e8" && to == "c8") {move("a8", "d8", expand_fen(fen));}
 
+            let en_passant_occured = piece.toLowerCase() == "p" && from.charCodeAt(0) != to.charCodeAt(0) && expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(to.charAt(1))].charAt(to.charCodeAt(0) - "a".charCodeAt(0)) == "1"
+
             move(from, to, expand_fen(fen));
 
-            
+            // Removes pawn after en passant capture
+            if (en_passant_occured) {
+                if (fen.split(" ")[1] == "w") {
+                    move(from, String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) - 1), expand_fen(fen));
+                }
+                if (fen.split(" ")[1] == "b") {
+                    move(from, String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) + 1), expand_fen(fen));
+                }
+
+            }
+
+            // Clear en passant target square
+            fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2] + " " + "-" + " " + fen.split(" ")[4] + " " + fen.split(" ")[5];
+            // Adds en passant target square for double pawn moves
+            if (piece.toLowerCase() == "p" && from.charCodeAt(0) == to.charCodeAt(0) && Math.abs(parseInt(from.charAt(1)) - parseInt(to.charAt(1))) == 2) {
+                if (fen.split(" ")[1] == "w") { fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2] + " " + String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) - 1) + " " + fen.split(" ")[4] + " " + fen.split(" ")[5]; }
+                if (fen.split(" ")[1] == "b") { fen = fen.split(" ")[0] + " " + fen.split(" ")[1] + " " + fen.split(" ")[2] + " " + String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) + 1) + " " + fen.split(" ")[4] + " " + fen.split(" ")[5]; }
+            }
+
 
             // Toggle turn and increment full-move number
             let fen_parts = fen.split(" ");
@@ -220,10 +245,7 @@ document.addEventListener("click", (e) => {
                 fen_parts[5] = (parseInt(fen_parts[5]) + 1).toString(); // Increment full-move number on black move
             }
             fen_parts[1] = fen_parts[1] == "w" ? "b" : "w"; // Toggle turn
-            
-            
-            
-            
+
             fen = fen_parts.join(" ");
             console.log("VALID MOVE", fen);
 
