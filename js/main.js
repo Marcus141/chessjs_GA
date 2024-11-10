@@ -94,10 +94,11 @@ const draw_pieces = (ctx, fen) => {
 }
 
 
-const move = (from, to, expanded_fen) => {
+const move = (from, to, fen_) => {
+    let expanded_fen = expand_fen(fen_);
     let fen_arr = expanded_fen.split("/");
     let from_x = from.charCodeAt(0) - "a".charCodeAt(0);
-    let from_y = 8 - parseInt(from.charAt(1));
+    let from_y = square_to_cord(from)[1];
     let to_x = to.charCodeAt(0) - "a".charCodeAt(0);
     let to_y = 8 - parseInt(to.charAt(1));
     let piece = fen_arr[from_y].charAt(from_x);
@@ -109,10 +110,11 @@ const move = (from, to, expanded_fen) => {
     draw_pieces(ctx, fen);
 }
 
-const hypothetical_move = (from, to, expanded_fen) => {
+const hypothetical_move = (from, to, fen) => {
+    let expanded_fen = expand_fen(fen);
     let fen_arr = expanded_fen.split("/");
     let from_x = from.charCodeAt(0) - "a".charCodeAt(0);
-    let from_y = 8 - parseInt(from.charAt(1));
+    let from_y = square_to_cord(from)[1];
     let to_x = to.charCodeAt(0) - "a".charCodeAt(0);
     let to_y = 8 - parseInt(to.charAt(1));
     let piece = fen_arr[from_y].charAt(from_x);
@@ -123,6 +125,120 @@ const hypothetical_move = (from, to, expanded_fen) => {
 }
 
 draw_pieces(ctx, fen);
+
+class GloblaState {
+    constructor( ) {
+        this.cursorX = 0;
+        this.cursorY = 0;
+        this.move = "";
+        this.moveQueue = [];
+        this.isRunning = true;
+        this.currentTime = performance.now(),
+        this.deltaTime;
+        this.targetFps = 60;
+        this.frameInterval = 1000 / 60;
+        this.lastFrameTime = 0;
+        this.player = prompt("Enter player name");
+    }
+}
+const state1 = new GloblaState();
+
+
+document.addEventListener("mousemove", (e) => {
+    state1.cursorX = e.clientX;
+    state1.cursorY = e.clientY;
+})
+
+document.addEventListener("click", (e) => {
+    let turn = fen.split(" ")[1];
+
+    // if the move is empty, add the first square to the move
+    if (state1.move.length == 0) {
+        let x = Math.floor((state1.cursorX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
+        let y = Math.floor((state1.cursorY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
+
+        if ((x < 0) || (x > 7) || (y < 0) || (y > 7)) {
+            state1.move = "";
+            return;
+        };
+        let from = cord_to_square(x, y);
+        if (piece_at(from, fen) == "1") {
+            state1.move = "";
+            return;
+        }
+        if (turn == "w") {
+            if (is_black_piece(from, fen)) {
+                state1.move = "";
+                return;
+            }
+        }
+        if (turn == "b") {
+            if (is_white_piece(from, fen)) {
+                state1.move = "";
+                return;
+            }
+        }
+
+        state1.move = cord_to_square(x, y);
+        console.log(state1.move);
+        return;
+    }
+    // if the "from" part of the move is already selected, select the "to" part
+    if (state1.move.length == 2) {
+        let x = Math.floor((state1.cursorX - document.getElementById("canvas").getBoundingClientRect().x)  / 80);
+        let y = Math.floor((state1.cursorY - document.getElementById("canvas").getBoundingClientRect().y)  / 80);
+        if ((x < 0) || (x > 7) || (y < 0) || (y > 7)) {
+            state1.move = "";
+            return;
+        };
+        let to = cord_to_square(x, y);
+        if (piece_at(to, fen) !="1" && is_same_color(cord_to_square(x, y), state1.move, fen)) {
+            state1.move = "";
+            return;
+        }
+        
+        // Check if move is legal
+        if (get_all_legal_moves(fen)[state1.move].includes(to)) {
+            state1.move += cord_to_square(x, y);
+            console.log(state1.move);
+            state1.moveQueue.push(state1.move);
+            state1.move = "";
+            return;
+        }
+    }
+})
+
+const update = () => {
+
+    state1.currentTime = performance.now();
+    state1.deltaTime = (state1.currentTime - state1.lastFrameTime)/1000;
+
+    console.log(state1.move);
+
+    if (state1.moveQueue.length > 0) {
+        let from = state1.moveQueue[0].substring(0, 2);
+        let to = state1.moveQueue[0].substring(2, 4);
+
+        if (get_legal_moves(from, fen).includes(to)) {
+            move(from, to, fen);
+            state1.moveQueue.shift();
+
+            
+        }
+        state1.moveQueue.shift();
+    }
+
+    state1.lastFrameTime = state1.currentTime;
+}
+
+
+function animate() {
+    setTimeout(() => {
+        if (state1.isRunning) requestAnimationFrame(animate);
+        update();
+    }, state1.frameInterval);
+}
+animate();
 
 
 let from = "";
@@ -136,14 +252,14 @@ document.addEventListener("click", (e) => {
         if (invalid_cordinate) return;
 
 
-        let to = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
+        let to = cord_to_square(x, y);
         if (get_legal_moves(from, expand_fen(fen)).includes(to)) {
 
             
 
             
             // Remove castling rights if king or rook moves
-            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "K") {
+            if (expand_fen(fen).split(" ")[0].split("/")[square_to_cord(from)[1]].charAt(square_to_cord(from)[0]) == "K") {
                 fen = fen.split(" ")[0] + " " + 
                 fen.split(" ")[1] + " " + 
                 fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
@@ -157,7 +273,7 @@ document.addEventListener("click", (e) => {
                 fen.split(" ")[4] + " " + 
                 fen.split(" ")[5];
             }
-            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "k") {
+            if (expand_fen(fen).split(" ")[0].split("/")[square_to_cord(from)[1]].charAt(square_to_cord(from)[0]) == "k") {
                 fen = fen.split(" ")[0] + " " + 
                 fen.split(" ")[1] + " " + 
                 fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
@@ -171,7 +287,7 @@ document.addEventListener("click", (e) => {
                 fen.split(" ")[4] + " " + 
                 fen.split(" ")[5];
             }
-            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "R" && from == "a1") {
+            if (piece_at(from, fen) == "R" && from == "a1") {
                 fen = fen.split(" ")[0] + " " + 
                 fen.split(" ")[1] + " " + 
                 fen.split(" ")[2].replace("Q", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
@@ -179,7 +295,7 @@ document.addEventListener("click", (e) => {
                 fen.split(" ")[4] + " " + 
                 fen.split(" ")[5];
             }
-            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "R" && from == "h1") {
+            if (piece_at(from, fen) == "R" && from == "h1") {
                 fen = fen.split(" ")[0] + " " + 
                 fen.split(" ")[1] + " " + 
                 fen.split(" ")[2].replace("K", fen.split(" ")[2].length == 1 ? "-":"") + " " +
@@ -187,7 +303,7 @@ document.addEventListener("click", (e) => {
                 fen.split(" ")[4] + " " + 
                 fen.split(" ")[5];
             }
-            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "r" && from == "a8") {
+            if (piece_at(from, fen) == "r" && from == "a8") {
                 fen = fen.split(" ")[0] + " " + 
                 fen.split(" ")[1] + " " + 
                 fen.split(" ")[2].replace("q", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
@@ -195,7 +311,7 @@ document.addEventListener("click", (e) => {
                 fen.split(" ")[4] + " " + 
                 fen.split(" ")[5];
             }
-            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "r" && from == "h8") {
+            if (piece_at(from, fen) == "r" && from == "h8") {
                 fen = fen.split(" ")[0] + " " + 
                 fen.split(" ")[1] + " " + 
                 fen.split(" ")[2].replace("k", fen.split(" ")[2].length == 1 ? "-":"") + " " + 
@@ -204,27 +320,26 @@ document.addEventListener("click", (e) => {
                 fen.split(" ")[5];
             }
             // Reset half-move clock if pawn moves or captures
-            if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)).toLowerCase() == "p" ||
-            expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(to.charAt(1))].charAt(to.charCodeAt(0) - "a".charCodeAt(0)) != "1") {
+            if (piece_at(from, fen) == "p" || piece_at(to, fen) != "1") {
                 expand_fen(fen).split(" ")[4] = "0"; // Reset half-move clock
             }
-            let piece = expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0));
-            if      ( piece == "K" && from == "e1" && to == "g1") {move("h1", "f1", expand_fen(fen));} 
-            else if ( piece == "K" && from == "e1" && to == "c1") {move("a1", "d1", expand_fen(fen));} 
-            else if ( piece == "k" && from == "e8" && to == "g8") {move("h8", "f8", expand_fen(fen));} 
-            else if ( piece == "k" && from == "e8" && to == "c8") {move("a8", "d8", expand_fen(fen));}
+            let piece = expand_fen(fen).split(" ")[0].split("/")[square_to_cord(from)[1]].charAt(square_to_cord(from)[0]);
+            if      ( piece == "K" && from == "e1" && to == "g1") {move("h1", "f1", fen);} 
+            else if ( piece == "K" && from == "e1" && to == "c1") {move("a1", "d1", fen);} 
+            else if ( piece == "k" && from == "e8" && to == "g8") {move("h8", "f8", fen);} 
+            else if ( piece == "k" && from == "e8" && to == "c8") {move("a8", "d8", fen);}
 
-            let en_passant_occured = piece.toLowerCase() == "p" && from.charCodeAt(0) != to.charCodeAt(0) && expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(to.charAt(1))].charAt(to.charCodeAt(0) - "a".charCodeAt(0)) == "1"
+            let en_passant_occured = piece.toLowerCase() == "p" && from.charCodeAt(0) != to.charCodeAt(0) && piece_at(to, fen) == "1"
 
-            move(from, to, expand_fen(fen));
+            move(from, to, fen);
 
             // Removes pawn after en passant capture
             if (en_passant_occured) {
                 if (fen.split(" ")[1] == "w") {
-                    move(from, String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) - 1), expand_fen(fen));
+                    move(from, String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) - 1), fen);
                 }
                 if (fen.split(" ")[1] == "b") {
-                    move(from, String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) + 1), expand_fen(fen));
+                    move(from, String.fromCharCode(to.charCodeAt(0)) + (parseInt(to.charAt(1)) + 1), fen);
                 }
 
             }
@@ -272,30 +387,30 @@ document.addEventListener("click", (e) => {
     let invalid_cordinate = (x < 0) || (x > 7) || (y < 0) || (y > 7);
     if (invalid_cordinate) return;
 
-    from = String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
+    from = cord_to_square(x, y);
 
     // Check if from square is occupied by a piece of the correct color
-    let piece = expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0));
-    if (piece == piece.toUpperCase() && expand_fen(fen).split(" ")[1] == "b") {
+    let piece = piece_at(from, fen);
+    if (piece == piece.toUpperCase() && fen.split(" ")[1] == "b") {
         from = "";
         return;
     }
-    if (piece == piece.toLowerCase() && expand_fen(fen).split(" ")[1] == "w") {
+    if (piece == piece.toLowerCase() && fen.split(" ")[1] == "w") {
         from = "";
         return;
     }
     // Check if from square is empty
-    if (expand_fen(fen).split(" ")[0].split("/")[8 - parseInt(from.charAt(1))].charAt(from.charCodeAt(0) - "a".charCodeAt(0)) == "1") {
+    if (piece == "1" ) {
         from = "";
         return;
     }
-    if (get_legal_moves(from, expand_fen(fen)).length == 0) {
+    if (get_legal_moves(from, fen).length == 0) {
         from = "";
         return;
     }
-    for (square of get_legal_moves(from, expand_fen(fen))) {
-        let x = square.charCodeAt(0) - "a".charCodeAt(0);
-        let y = 8 - parseInt(square.charAt(1));
+    for (square of get_legal_moves(from, fen)) {
+        let x = square_to_cord(square)[0];
+        let y = square_to_cord(square)[1];
         ctx.fillStyle = "rgba(0, 255, 40, 0.5)";
         ctx.fillRect(x * 80, y * 80, 80, 80);
     }
@@ -304,42 +419,35 @@ document.addEventListener("click", (e) => {
     
 });
 
-document.addEventListener("keydown", (e) => {
-    if (e.key == "Escape") {
-        from = "";
-        from_bool = false;
-        document.getElementsByClassName("peice_selection_indicator")[0].style.backgroundColor = "rgb(255, 20, 20)";
-    }
-});
-const get_all_legal_moves = (expanded_fen) => {
+const get_all_legal_moves = (fen) => {
     // Get all legal moves from each players pieces
-    let fen_arr = expanded_fen.split(" ")[0].split("/");
-    let turn = expanded_fen.split(" ")[1];
+    let fen_arr = expand_fen(fen).split(" ")[0].split("/");
+    let turn = fen.split(" ")[1];
     let legal_moves = {};
     for (let i = 0; i < fen_arr.length; i++) {
         for (let j = 0; j < fen_arr[i].length; j++) {
-            let piece = fen_arr[i].charAt(j);
+            let piece = piece_at(cord_to_square(j, i), fen);
             if ((turn == "w" && piece == piece.toUpperCase() && piece != "1")) {
-                let square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
-                legal_moves[square] = get_legal_moves(square, expanded_fen);
+                let square = cord_to_square(j, i);
+                legal_moves[square] = get_legal_moves(square, fen);
             }
             if ((turn == "b" && piece == piece.toLowerCase() && piece != "1")) {
-                let square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
-                legal_moves[square] = get_legal_moves(square, expanded_fen);
+                let square = cord_to_square(j, i);
+                legal_moves[square] = get_legal_moves(square, fen);
             }
         }
     }
     return legal_moves;
 }
 
-const get_legal_moves = (from, expanded_fen) => {
-    let fen_arr = expanded_fen.split(" ")[0].split("/");
-    let from_x = from.charCodeAt(0) - "a".charCodeAt(0);
-    let from_y = 8 - parseInt(from.charAt(1));
+const get_legal_moves = (from, fen) => {
+    let fen_arr = expand_fen(fen).split(" ")[0].split("/");
+    let from_x = square_to_cord(from)[0];
+    let from_y = square_to_cord(from)[1];
     let piece = fen_arr[from_y].charAt(from_x);
-    let turn = expanded_fen.split(" ")[1];
-    let castling_rights = expanded_fen.split(" ")[2];
-    let en_passant_target = expanded_fen.split(" ")[3];
+    let turn = expand_fen(fen).split(" ")[1];
+    let castling_rights = expand_fen(fen).split(" ")[2];
+    let en_passant_target = expand_fen(fen).split(" ")[3];
     let legal_moves = [];
 
 
@@ -382,20 +490,20 @@ const get_legal_moves = (from, expanded_fen) => {
                 if (dir[0] == 0) {
                     // Forward move
                     if (target_piece == "1") {
-                        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + x) + (8 - y));
+                        legal_moves.push(cord_to_square(x, y));
                     } 
                     break; // Stop after forward move
                 } else {
                     // Diagonal capture
                     if (target_piece != '1' && ((piece == 'P' && target_piece == target_piece.toLowerCase()) || (piece == 'p' && target_piece == target_piece.toUpperCase()))) {
-                        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + x) + (8 - y));
+                        legal_moves.push(cord_to_square(x, y));
                     }
                     break; // Stop after diagonal move
                 }
             } else {
                 // Handle other pieces
                 if (target_piece == "1" || (piece == piece.toUpperCase() && target_piece == target_piece.toLowerCase()) || (piece == piece.toLowerCase() && target_piece == target_piece.toUpperCase())) {
-                    legal_moves.push(String.fromCharCode("a".charCodeAt(0) + x) + (8 - y));
+                    legal_moves.push(cord_to_square(x, y));
                     if (target_piece != "1") break; // Stop if capturing
                 } else {
                     break; // Stop if blocked
@@ -406,11 +514,11 @@ const get_legal_moves = (from, expanded_fen) => {
             y += dir[1];
         }
     }
-    // Handle double pawn moves
+    // Handle doublfen
     if (piece == 'P' && from_y == 6 && fen_arr[5].charAt(from_x) == '1' && fen_arr[4].charAt(from_x) == '1') {
-        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + from_x) + 4); // White double pawn move
+        legal_moves.push(cord_to_square(from_x, 4)); // White double pawn move
     } else if (piece == 'p' && from_y == 1 && fen_arr[2].charAt(from_x) == '1' && fen_arr[3].charAt(from_x) == '1') {
-        legal_moves.push(String.fromCharCode("a".charCodeAt(0) + from_x) + 5); // Black double pawn move
+        legal_moves.push(cord_to_square(from_x, 3)); // Black double pawn move
     }
     
 
@@ -418,17 +526,17 @@ const get_legal_moves = (from, expanded_fen) => {
     
         if (piece.toUpperCase() == 'K') {
             if (turn == 'w' && from == 'e1') {
-                if (castling_rights.includes('K') && fen_arr[7].substring(5, 7) == '11' && !is_under_attack('e1', expanded_fen) && !is_under_attack('f1', expanded_fen) && !is_under_attack('g1', expanded_fen)) {
+                if (castling_rights.includes('K') && fen_arr[7].substring(5, 7) == '11' && !is_under_attack('e1', fen) && !is_under_attack('f1', fen) && !is_under_attack('g1', fen)) {
                     legal_moves.push('g1'); // White kingside castling
                 }
-                if (castling_rights.includes('Q') && fen_arr[7].substring(1, 4) == '111' && !is_under_attack('e1', expanded_fen) && !is_under_attack('d1', expanded_fen) && !is_under_attack('c1', expanded_fen)) {
+                if (castling_rights.includes('Q') && fen_arr[7].substring(1, 4) == '111' && !is_under_attack('e1', fen) && !is_under_attack('d1', fen) && !is_under_attack('c1', fen)) {
                     legal_moves.push('c1'); // White queenside castling
                 }
             } else if (turn == 'b' && from == 'e8') {
-                if (castling_rights.includes('k') && fen_arr[0].substring(5, 7) == '11' && !is_under_attack('e8', expanded_fen) && !is_under_attack('f8', expanded_fen) && !is_under_attack('g8', expanded_fen)) {
+                if (castling_rights.includes('k') && fen_arr[0].substring(5, 7) == '11' && !is_under_attack('e8', fen) && !is_under_attack('f8', fen) && !is_under_attack('g8', fen)) {
                     legal_moves.push('g8'); // Black kingside castling
                 }
-                if (castling_rights.includes('q') && fen_arr[0].substring(1, 4) == '111' && !is_under_attack('e8', expanded_fen) && !is_under_attack('d8', expanded_fen) && !is_under_attack('c8', expanded_fen)) {
+                if (castling_rights.includes('q') && fen_arr[0].substring(1, 4) == '111' && !is_under_attack('e8', fen) && !is_under_attack('d8', fen) && !is_under_attack('c8', fen)) {
                     legal_moves.push('c8'); // Black queenside castling
                 }
             }
@@ -436,8 +544,8 @@ const get_legal_moves = (from, expanded_fen) => {
 
     // Handle en passant
     if (piece.toUpperCase() == 'P') {
-        let en_passant_x = en_passant_target.charCodeAt(0) - "a".charCodeAt(0);
-        let en_passant_y = 8 - parseInt(en_passant_target.charAt(1));
+        let en_passant_x = square_to_cord(en_passant_target)[0];
+        let en_passant_y = square_to_cord(en_passant_target)[1];
 
         if (turn == 'w' && from_y == 3 && en_passant_y == 2 && Math.abs(from_x - en_passant_x) == 1) {
             legal_moves.push(en_passant_target);
@@ -452,14 +560,14 @@ const get_legal_moves = (from, expanded_fen) => {
     if (piece.toLowerCase() == "k"){
         if (turn == "w") {
             for (let move of legal_moves) {
-                if (is_under_attack(move, expanded_fen)) {
+                if (is_under_attack(move, fen)) {
                     legal_moves = legal_moves.filter((value) => value != move);
                 }
             }
         }
         if (turn == "b") {
             for (let move of legal_moves) {
-                if (is_under_attack(move, expanded_fen)) {
+                if (is_under_attack(move, fen)) {
                     legal_moves = legal_moves.filter((value) => value != move);
                 }
             }
@@ -468,7 +576,7 @@ const get_legal_moves = (from, expanded_fen) => {
 
     // Remove moves that put the king in check
     for (let move of legal_moves) {
-        if (is_in_check(expand_fen(hypothetical_move(from, move, expanded_fen)))) {
+        if (is_in_check(expand_fen(hypothetical_move(from, move, fen)))) {
             legal_moves = legal_moves.filter((value) => value != move);
         }
     }
@@ -476,9 +584,9 @@ const get_legal_moves = (from, expanded_fen) => {
     return legal_moves;
 };
 
-const get_movement_pattern = (square, expanded_fen) => {
-    let from_x = square.charCodeAt(0) - "a".charCodeAt(0);
-    let from_y = 8 - parseInt(square.charAt(1));
+const get_movement_pattern = (square, fen) => {
+    let from_x = square_to_cord(square)[0];
+    let from_y = square_to_cord(square)[1];
 
     let movement_pattern = [
         // - - diagonal
@@ -518,7 +626,7 @@ const get_movement_pattern = (square, expanded_fen) => {
             }
             let x = from_x + movement_pattern[i][j][0];
             let y = from_y + movement_pattern[i][j][1];
-            if (expanded_fen.split(" ")[0].split("/")[y].charAt(x) != "1") {
+            if (piece_at(cord_to_square(x,y), fen) != "1") {
                 for (let k = j + 1; k < movement_pattern[i].length; k++) {
                     movement_pattern[i][k] = null;
                 }
@@ -528,13 +636,13 @@ const get_movement_pattern = (square, expanded_fen) => {
     return movement_pattern;
 }
 
-const is_under_attack = (square, expanded_fen) => {
-    let fen_arr = expanded_fen.split(" ")[0].split("/");
-    let from_x = square.charCodeAt(0) - "a".charCodeAt(0);
-    let from_y = 8 - parseInt(square.charAt(1));
-    let turn = expanded_fen.split(" ")[1];
+const is_under_attack = (square, fen) => {
+    let fen_arr = expand_fen(fen).split(" ")[0].split("/");
+    let from_x = square_to_cord(square)[0];
+    let from_y = square_to_cord(square)[1];
+    let turn = expand_fen(fen).split(" ")[1];
     
-    let movement_pattern = get_movement_pattern(square, expanded_fen);
+    let movement_pattern = get_movement_pattern(square, fen);
 
     for (let i = 0; i < movement_pattern.length; i++) {
         for (let j = 0; j < movement_pattern[i].length; j++) {
@@ -595,7 +703,8 @@ const is_under_attack = (square, expanded_fen) => {
     return false;
 }
 
-const is_in_check = (expanded_fen) => {
+const is_in_check = (fen) => {
+    let expanded_fen = expand_fen(fen);
     let fen_arr = expanded_fen.split(" ")[0].split("/");
     let turn = expanded_fen.split(" ")[1];
     let king_square = "";
@@ -603,21 +712,21 @@ const is_in_check = (expanded_fen) => {
         for (let j = 0; j < fen_arr[i].length; j++) {
             let piece = fen_arr[i].charAt(j);
             if (turn == "w" && piece == "K") {
-                king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                king_square = cord_to_square(j, i);
             }
             if (turn == "b" && piece == "k") {
-                king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                king_square = cord_to_square(j, i);
             }
         }
     }
-    return is_under_attack(king_square, expanded_fen);
+    return is_under_attack(king_square, condence_fen(fen));
 }
 
-const is_checkmate = (expanded_fen) => {
+const is_checkmate = (fen) => {
     // check if king is still in check after all possible moves
-    let turn = expanded_fen.split(" ")[1];
+    let turn = fen.split(" ")[1];
     
-    let all_legal_moves = Object.entries(get_all_legal_moves(expanded_fen));
+    let all_legal_moves = Object.entries(get_all_legal_moves(fen));
     
     for (let i = 0; i < all_legal_moves.length; i++) {
         if (all_legal_moves[i][1].length == 0) {
@@ -626,17 +735,17 @@ const is_checkmate = (expanded_fen) => {
         
         for (let j = 0; j < all_legal_moves[i][1].length; j++) {
             
-            let hypothetical_fen = expand_fen(hypothetical_move(all_legal_moves[i][0], all_legal_moves[i][1][j], expanded_fen));
+            let hypothetical_fen = hypothetical_move(all_legal_moves[i][0], all_legal_moves[i][1][j], fen);
             let fen_arr = expand_fen(hypothetical_fen).split(" ")[0].split("/");
             let king_square = "";
             for (let i = 0; i < fen_arr.length; i++) {
                 for (let j = 0; j < fen_arr[i].length; j++) {
                     let piece = fen_arr[i].charAt(j);
                     if (turn == "w" && piece == "K") {
-                        king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                        king_square = cord_to_square(j, i);
                     }
                     if (turn == "b" && piece == "k") {
-                        king_square = String.fromCharCode("a".charCodeAt(0) + j) + (8 - i);
+                        king_square = cord_to_square(j, i);
                     }
                 }
             }
@@ -648,3 +757,23 @@ const is_checkmate = (expanded_fen) => {
     return true;
 }
 
+const cord_to_square = (x, y) => {
+    return String.fromCharCode("a".charCodeAt(0) + x) + (8 - y);
+}
+const square_to_cord = (square) => {
+    return [square.charCodeAt(0) - "a".charCodeAt(0), 8 - parseInt(square.charAt(1))];
+}
+
+const piece_at = (square, fen) => {
+    return expand_fen(fen).split(" ")[0].split("/")[square_to_cord(square)[1]].charAt(square_to_cord(square)[0]);
+}
+
+const is_white_piece = (square, fen) => {
+    return piece_at(square, fen) == piece_at(square, fen).toUpperCase();
+}
+const is_black_piece = (square, fen) => {
+    return piece_at(square, fen) == piece_at(square, fen).toLowerCase();
+}
+const is_same_color = (square1, square2, fen) => {
+    return is_black_piece(square1, fen) && is_black_piece(square2, fen) || is_white_piece(square1, fen) && is_white_piece(square2, fen);
+}
